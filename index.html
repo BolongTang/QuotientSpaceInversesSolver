@@ -133,15 +133,15 @@ import re
 
 def parse(problem_statement):
     # Normalize: strip and remove internal whitespace
-    s = problem_statement.strip()
-    s = re.sub(r'\\s+', '', s)
+    problem_statement = problem_statement.strip()
+    problem_statement = re.sub(r'\\s+', '', problem_statement)
 
     # Accept upper/lower Z and anchor the whole string
-    m = re.fullmatch(r'[Zz]/(\\d+)[Zz]', s)
-    if not m:
+    modulus_str = re.fullmatch(r'[Zz]/(\\d+)[Zz]', problem_statement)
+    if not modulus_str:
         raise ValueError("Invalid format. Expected 'Z/mZ' (e.g., Z/16Z). Case-insensitive; spaces allowed.")
 
-    return int(m.group(1))
+    return int(modulus_str.group(1))
 
 def find_unit_group(modulus):
     unit_group = set()
