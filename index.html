@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotient Space Inverses Solver</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            display: none;
+        }
+        #loading {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+            display: none;
+        }
+        .description {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .example {
+            color: #888;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .error {
+            color: #d32f2f;
+            border-left-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Quotient Space Inverses Solver</h1>
+        <p class="description">
+            Taking a quotient space in the format of Z/mZ (e.g., Z/16Z), the Quotient Space Inverses Solver 
+            cleanly computes the unit group, and each unit's order and inverse.
+        </p>
+        
+        <div class="input-group">
+            <label for="quotientSpace">Enter Quotient Space:</label>
+            <input type="text" id="quotientSpace" placeholder="Z/16Z" value="Z/16Z">
+            <p class="example">Example: Z/16Z, Z/7Z, Z/250Z</p>
+        </div>
+        
+        <button id="solveBtn" onclick="solve()">Solve</button>
+        
+        <div id="loading">Loading Python environment...</div>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        let pyodideReady = false;
+        let pyodide;
+
+        // Initialize Pyodide
+        async function initPyodide() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('solveBtn').disabled = true;
+            
+            try {
+                pyodide = await loadPyodide();
+                
+                // Load the Python code
+                await pyodide.runPythonAsync(`
+from math import gcd
+import re
+
+def parse(problem_statement):
+    modulus_str = re.search(r'Z/(\\\\d+)Z', problem_statement)
+    if not modulus_str:
+        raise ValueError("Invalid format. Expected 'Z/mZ'")
+    return int(modulus_str.group(1))
+
+def find_unit_group(modulus):
+    unit_group = set()
+    for num in range(1, modulus):
+        if gcd(num, modulus) == 1:
+            unit_group.add(num)
+    return unit_group
+
+def find_orders_and_inverses_for_units(unit_group, modulus):
+    orders = dict()
+    inverses = dict()
+    for num in unit_group:
+        order = 1
+        powered = num
+        powered_one_less = 1
+        
+        while powered != 1:
+            powered = (powered * num) % modulus
+            powered_one_less = (powered_one_less * num) % modulus
+            order += 1
+    
+        orders[num] = order
+        inverses[num] = powered_one_less
+
+    return orders, inverses
+
+def solve_quotient_space(problem_statement):
+    modulus = parse(problem_statement)
+    unit_group = find_unit_group(modulus)
+    orders, inverses = find_orders_and_inverses_for_units(unit_group, modulus)
+    
+    return {
+        'unit_group': sorted(list(unit_group)),
+        'orders': orders,
+        'inverses': inverses
+    }
+                `);
+                
+                pyodideReady = true;
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('solveBtn').disabled = false;
+            } catch (error) {
+                document.getElementById('loading').innerHTML = 'Error loading Python environment: ' + error.message;
+                document.getElementById('loading').classList.add('error');
+            }
+        }
+
+        // Solve the quotient space problem
+        async function solve() {
+            if (!pyodideReady) {
+                alert('Python environment is still loading. Please wait...');
+                return;
+            }
+
+            const input = document.getElementById('quotientSpace').value.trim();
+            const outputDiv = document.getElementById('output');
+            
+            if (!input) {
+                outputDiv.style.display = 'block';
+                outputDiv.className = 'error';
+                outputDiv.textContent = 'Please enter a quotient space.';
+                return;
+            }
+
+            try {
+                document.getElementById('solveBtn').disabled = true;
+                outputDiv.style.display = 'block';
+                outputDiv.className = '';
+                outputDiv.textContent = 'Computing...';
+
+                // Call the Python function
+                pyodide.globals.set('user_input', input);
+                const result = await pyodide.runPythonAsync(`
+import json
+result = solve_quotient_space(user_input)
+json.dumps(result)
+                `);
+
+                const data = JSON.parse(result);
+                
+                // Format the output
+                let output = `Quotient Space: ${input}\n\n`;
+                output += `Unit group: {${data.unit_group.join(', ')}}\n\n`;
+                output += `Orders of units:\n`;
+                for (const [key, value] of Object.entries(data.orders)) {
+                    output += `  ${key}: ${value}\n`;
+                }
+                output += `\nInverses of units:\n`;
+                for (const [key, value] of Object.entries(data.inverses)) {
+                    output += `  ${key}: ${value}\n`;
+                }
+
+                outputDiv.textContent = output;
+            } catch (error) {
+                outputDiv.className = 'error';
+                outputDiv.textContent = 'Error: ' + error.message;
+            } finally {
+                document.getElementById('solveBtn').disabled = false;
+            }
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('quotientSpace').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                solve();
+            }
+        });
+
+        // Initialize Pyodide on page load
+        window.addEventListener('load', initPyodide);
+    </script>
+</body>
+</html>
