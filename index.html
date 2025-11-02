@@ -132,10 +132,16 @@ from math import gcd
 import re
 
 def parse(problem_statement):
-    modulus_str = re.search(r'Z/(\d+)Z', problem_statement)
-    if not modulus_str:
-        raise ValueError("Invalid format. Expected 'Z/mZ'")
-    return int(modulus_str.group(1))
+    # Normalize: strip and remove internal whitespace
+    s = problem_statement.strip()
+    s = re.sub(r'\\s+', '', s)
+
+    # Accept upper/lower Z and anchor the whole string
+    m = re.fullmatch(r'[Zz]/(\\d+)[Zz]', s)
+    if not m:
+        raise ValueError("Invalid format. Expected 'Z/mZ' (e.g., Z/16Z). Case-insensitive; spaces allowed.")
+
+    return int(m.group(1))
 
 def find_unit_group(modulus):
     unit_group = set()
