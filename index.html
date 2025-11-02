@@ -132,11 +132,10 @@ from math import gcd
 import re
 
 def parse(problem_statement):
-    modulus_str = re.search(r'Z/(\\d+)Z', problem_statement)
+    modulus_str = re.search(r'Z/(\\\\d+)Z', problem_statement)
     if not modulus_str:
         raise ValueError("Invalid format. Expected 'Z/mZ'")
-    modulus = map(int, modulus_str.groups())
-    return next(modulus)
+    return int(modulus_str.group(1))
 
 def find_unit_group(modulus):
     unit_group = set()
@@ -208,9 +207,10 @@ def solve_quotient_space(problem_statement):
                 outputDiv.textContent = 'Computing...';
 
                 // Call the Python function
+                pyodide.globals.set('user_input', input);
                 const result = await pyodide.runPythonAsync(`
 import json
-result = solve_quotient_space('${input}')
+result = solve_quotient_space(user_input)
 json.dumps(result)
                 `);
 
